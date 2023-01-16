@@ -27,6 +27,7 @@ class MyApp extends StatelessWidget {
       child: BlocProvider(
         create: (context) => UserBloc( userRepository: RepositoryProvider.of<UserRepository>(context),)..add(StartEvent()),
         child: MaterialApp(
+            debugShowCheckedModeBanner: false,
             theme: ThemeData(primarySwatch: Colors.blueGrey,),
             home: const LogInPage()
         ),

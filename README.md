@@ -1,16 +1,14 @@
 # iots_manager
 
-A new Flutter project.
+The mobile cross-platform application for manage the IoT devices of smart home system.
 
-## Getting Started
+## Screenshots
 
-This project is a starting point for a Flutter application.
+| MainPage | Chart navigation | Remove IoT |
+| <img height="480" src="_readmi-res/02_overview.png"> | <img height="480" src="_readmi-res/03_chart_navigate.png"> | <img height="480" src="_readmi-res/04_remove.png"> |
+| New IoT added | Side Menu |  |
+| <img height="480" src="_readmi-res/05_addNewIoT_Success.png"> | <img height="480" src="_readmi-res/06_sidemenu.png"> |  |
 
-A few resources to get you started if this is your first Flutter project:
+## Description
 
-- [Lab: Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
-- [Cookbook: Useful Flutter samples](https://docs.flutter.dev/cookbook)
-
-For help getting started with Flutter development, view the
-[online documentation](https://docs.flutter.dev/), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
+...

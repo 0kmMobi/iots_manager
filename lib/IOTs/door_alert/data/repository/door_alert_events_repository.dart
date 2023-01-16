@@ -1,6 +1,7 @@
 // ignore_for_file: constant_identifier_names, non_constant_identifier_names
 import 'dart:collection';
 import 'package:firebase_database/firebase_database.dart';
+import 'package:flutter/foundation.dart';
 import 'package:iots_manager/IOTs/door_alert/data/api/door_alert_firebase_api.dart';
 import 'package:iots_manager/IOTs/door_alert/data/repository/door_alert_event_model.dart';
 import 'package:iots_manager/locator_service.dart';
@@ -96,9 +97,8 @@ class DoorAlertEventsRepository{
     for (TimeStamp ts in eventsTS) {
       DoorAlertEvent event = _eventsFullData[ts]!;
 
-      bool result = oneSession.tryToAddAnEvent(event);
-
-      if(!result) {
+      bool added = oneSession.tryToAddAnEvent(event);
+      if(!added) {
         oneSession = DoorAlertSession()
           ..tryToAddAnEvent(event);
         sessions.add(oneSession);

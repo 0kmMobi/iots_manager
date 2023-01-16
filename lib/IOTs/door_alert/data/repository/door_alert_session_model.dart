@@ -1,3 +1,4 @@
+import 'package:flutter/material.dart';
 import 'package:iots_manager/IOTs/door_alert/data/door_alert_constants.dart';
 import 'package:iots_manager/IOTs/door_alert/data/repository/door_alert_event_model.dart';
 import 'package:iots_manager/common/def_types.dart';
@@ -21,7 +22,7 @@ class DoorAlertSession {
       return true;
     }
     final lastEvent = _events.last;
-    if(event.timeStamp - lastEvent.timeStamp <= DEFAULT_MAX_TIME_BETWEEN_EVENTS_IN_FRAGMENT) {
+    if(event.timeStamp - lastEvent.timeStamp <= DEFAULT_MAX_TIME_BETWEEN_EVENTS_IN_SESSION) {
       _events.add(event);
       return true;
     }
