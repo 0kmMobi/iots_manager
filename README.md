@@ -4,15 +4,19 @@ The mobile cross-platform application for manage the IoT devices of smart home s
 
 ## 'Smart Home' system scheme
 
-<img width="512" src="_readmi-res/scheme.png">
+<p align="center">
+  <img width="512" src="_readmi-res/scheme.png">
+</p>
+
 
 ## Overview
 
-** At the moment, this 'Smart Home' system supports the following IoT devices:
+### At the moment, this 'Smart Home' system supports the following IoT devices:
 - [Temperature sensors controller](https://github.com/0kmMobi/IoT_TemperatureSensors);
 - ['Door alarm' controller](https://github.com/0kmMobi/IoT_DoorAlarm).
 
-** The 'IoTs Manager' mobile application performs the following functions in the smart home system:
+
+### The 'IoTs Manager' mobile application performs the following functions in the smart home system:
 - adding new devices and deleting unused ones for the current authorized user;
 - receiving, processing and providing data from devices in the required form;
 - device settings management: directly via Wifi and online via Firebase Backend;
@@ -35,6 +39,12 @@ The mobile cross-platform application for manage the IoT devices of smart home s
 
 ## Screenshots
 
-<img height="320" src="_readmi-res/02_overview.png"> <img height="320" src="_readmi-res/03_chart_navigate.png"> <img height="320" src="_readmi-res/04_remove.png">
-<img height="320" src="_readmi-res/05_addNewIoT_Success.png"> <img height="320" src="_readmi-res/06_sidemenu.png"> <img height="320" src="_readmi-res/07_edit_sendor_name.png">
+|   |   |
+|---|---|
+|<img height="320" src="_readmi-res/02_overview.png">|<img height="320" src="_readmi-res/03_chart_navigate.png">|
+|<img height="320" src="_readmi-res/04_remove.png">|<img height="320" src="_readmi-res/05_addNewIoT_Success.png">|
+|<img height="320" src="_readmi-res/06_sidemenu.png">|<img height="320" src="_readmi-res/07_edit_sendor_name.png">|
+
+ 
+
 
