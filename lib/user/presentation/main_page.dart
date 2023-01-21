@@ -74,6 +74,7 @@ class MainPage extends StatelessWidget {
                 itemBuilder: (context, index) {
                 final IoTInfo iotInfo = listIoTs[index];
                  return LongTapSlider(
+                   key: ValueKey(iotInfo.iotId),
                    actionCallback: () {
                      debugPrint("LongTapSlider callback");
                      BlocProvider.of<UserBloc>(context).add(DeleteIoTDeviceEvent(iotInfo.iotId));
@@ -90,7 +91,7 @@ class MainPage extends StatelessWidget {
                              borderRadius: const BorderRadius.all(Radius.circular(8)),
                              color: Colors.blueGrey.shade900
                          ),
-                         child: IoTBuilder(key: ValueKey(iotInfo.iotId), iotInfo: iotInfo)
+                         child: IoTBuilder(iotInfo: iotInfo)
                        )
                      ),
                    )

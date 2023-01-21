@@ -1,7 +1,7 @@
 
 import 'package:iots_manager/IOTs/door_alert/data/repository/door_alert_events_repository.dart';
 import 'package:iots_manager/IOTs/door_alert/presentation/door_alert_wgt.dart';
-import 'package:iots_manager/IOTs/temperature_sensors/data/repository/temp_sens_chart_repository.dart';
+import 'package:iots_manager/IOTs/temperature_sensors/data/repository/temp_sens_repository.dart';
 import 'package:iots_manager/IOTs/temperature_sensors/domain/bloc/temp_sens_chart_mode_bloc.dart';
 import 'package:iots_manager/IOTs/temperature_sensors/presentation/temp_sens_wgt.dart';
 import 'package:iots_manager/locator_service.dart';
@@ -28,8 +28,8 @@ class IoTBuilder extends StatelessWidget {
           }),
         );
       case IOT_DEVICE_TYPE_TEMPERATURE_SENSORS:
-        return RepositoryProvider<TempSensChartRepository>( create: (context) => TempSensChartRepository(iotInfo.iotId),
-          child: BlocProvider( create: (context) => TempSensChartModeBloc(chartRepository: RepositoryProvider.of<TempSensChartRepository>(context)),
+        return RepositoryProvider<TempSensRepository>( create: (context) => TempSensRepository(iotInfo.iotId),
+          child: BlocProvider( create: (context) => TempSensChartModeBloc(chartRepository: RepositoryProvider.of<TempSensRepository>(context)),
             child: const TempSensWidget(),
           ),
         );

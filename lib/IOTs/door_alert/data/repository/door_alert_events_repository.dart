@@ -1,7 +1,7 @@
 // ignore_for_file: constant_identifier_names, non_constant_identifier_names
 import 'dart:collection';
+import 'dart:math';
 import 'package:firebase_database/firebase_database.dart';
-import 'package:flutter/foundation.dart';
 import 'package:iots_manager/IOTs/door_alert/data/api/door_alert_firebase_api.dart';
 import 'package:iots_manager/IOTs/door_alert/data/repository/door_alert_event_model.dart';
 import 'package:iots_manager/locator_service.dart';
@@ -55,56 +55,52 @@ class DoorAlertEventsRepository{
     QuantityElements countRecords = 0;
     TimeStamp maxTimeStampLocal = 0;
     Map<dynamic, dynamic> mapRawSensData = snapshot.value as Map<dynamic, dynamic>;
-    // debugPrint("REPO[$sIoTId]: addNewSensorsData: mapRawSensData.size = ${mapRawSensData.length}");
 
-    mapRawSensData.forEach((sRecord, value) { // Loop by records
-      final mapOneRecord = value as Map<dynamic, dynamic>;
-
-      if(mapOneRecord.containsKey('time')) {
-        TimeStamp curTimeStamp = mapOneRecord['time'] as TimeStamp;
-        if(maxTimeStampLocal < curTimeStamp) {
-          maxTimeStampLocal = curTimeStamp;
-        }
-        mapOneRecord.remove('time');
-        if(mapOneRecord.length == 1) {
-          final String eventName = mapOneRecord.keys.first;
-          final num eventValue = mapOneRecord[eventName];
-          DoorAlertEvent event = DoorAlertEvent(curTimeStamp, eventName, eventValue);
-          _eventsFullData.putIfAbsent(curTimeStamp, ()=> event);
-          countRecords ++;
-        } else {
-          /// data error: the record contains not 2 parameters
-        }
+    mapRawSensData.forEach((sRecord, mapRecord) { // Loop by records
+      if(_mappingOneRecord(mapRecord as Map<dynamic, dynamic>)) {
+        countRecords ++;
       }
     });
-    //mapRawSensData.clear(); // Optionally clean snapshot data after single query
     _lastTimeStamp = maxTimeStampLocal > _lastTimeStamp ? maxTimeStampLocal : _lastTimeStamp;
 
-    // Trim very old records which are older than 7 days
+    /// Trim very old records which are older than 7 days
     TimeStamp oldTimeStamp = _lastTimeStamp - MAX_CACHE_DURATION_MSEC;
     _eventsFullData.removeWhere((timestamp, mapSensors) => timestamp <= oldTimeStamp);
     return countRecords;
   }
 
+  bool _mappingOneRecord(final Map<dynamic, dynamic> mapOneRecord) {
+    if(mapOneRecord.containsKey('time')) {
+      TimeStamp curTimeStamp = mapOneRecord['time'] as TimeStamp;
+      _lastTimeStamp = max(_lastTimeStamp, curTimeStamp);
+      mapOneRecord.remove('time');
+      if(mapOneRecord.length == 1) {
+        final String eventName = mapOneRecord.keys.first;
+        final num eventValue = mapOneRecord[eventName];
+        DoorAlertEvent event = DoorAlertEvent(curTimeStamp, eventName, eventValue);
+        _eventsFullData.putIfAbsent(curTimeStamp, ()=> event);
+        return true;
+      }
+      /// data error: the record contains not 2 parameters
+      return false;
+    }
+    return false;
+  }
+
   /// The events session is a group of events that was created one-by-one, since its has timestamp no more than 2 minutes.
   void _groupingEventsBySessions() {
     final sessions = <DoorAlertSession>[];
-
-    DoorAlertSession oneSession = DoorAlertSession();
+    var oneSession = DoorAlertSession();
     sessions.add(oneSession);
 
     final List<int> eventsTS = _eventsFullData.keys.toList();
     for (TimeStamp ts in eventsTS) {
       DoorAlertEvent event = _eventsFullData[ts]!;
-
-      bool added = oneSession.tryToAddAnEvent(event);
-      if(!added) {
-        oneSession = DoorAlertSession()
-          ..tryToAddAnEvent(event);
+      if(!oneSession.tryToAddAnEvent(event)) {
+        oneSession = DoorAlertSession()..tryToAddAnEvent(event);
         sessions.add(oneSession);
       }
     }
-
     if(sessions.isNotEmpty) {
       _alertSessions.clear();
       _alertSessions.addAll(sessions);

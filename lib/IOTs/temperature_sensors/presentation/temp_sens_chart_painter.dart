@@ -4,13 +4,13 @@ import 'dart:collection';
 import 'package:flutter/material.dart';
 import 'package:iots_manager/common/def_types.dart';
 import 'package:iots_manager/IOTs/temperature_sensors/data/temp_sens_constants.dart';
-import 'package:iots_manager/IOTs/temperature_sensors/data/repository/temp_sens_chart_repository.dart';
+import 'package:iots_manager/IOTs/temperature_sensors/data/repository/temp_sens_repository.dart';
 
 class TempSensChartPainter extends CustomPainter {
-  final TempSensChartRepository chartRepo;
+  final TempSensRepository sensRepo;
   final ListElemIndex? iTouchedTimeStamp;
 
-  TempSensChartPainter(this.chartRepo, this.iTouchedTimeStamp);
+  TempSensChartPainter(this.sensRepo, this.iTouchedTimeStamp);
 
   @override
   void paint(Canvas canvas, Size size) {
@@ -22,10 +22,10 @@ class TempSensChartPainter extends CustomPainter {
       ..style = PaintingStyle.fill;
     canvas.drawRect(Rect.fromLTWH(0, 0, fullW, fullH), paintBackRect);
 
-    if(chartRepo.chartDataSize > 0) {
+    if(sensRepo.chartRepo.chartDataSize > 0) {
       final double stepX = fullW / (CHART_NUM_POINTS-1);
-      final offsetY = fullH * (1 + chartRepo.chartMinY /chartRepo.chartRangeY);
-      final scaleY = fullH/chartRepo.chartRangeY;
+      final offsetY = fullH * (1 + sensRepo.chartRepo.chartMinY /sensRepo.chartRepo.chartRangeY);
+      final scaleY = fullH/sensRepo.chartRepo.chartRangeY;
 
       drawGridTimeCols (canvas, CHART_NUM_POINTS, stepX, fullW, fullH);
       drawGridChartsEdges (canvas, CHART_NUM_POINTS, stepX, offsetY, scaleY, fullW);
@@ -43,14 +43,14 @@ class TempSensChartPainter extends CustomPainter {
       ..color = Colors.white38
       ..strokeWidth = 2;
 
-    final curTS = chartRepo.chartTimeStamps[iTS];
+    final curTS = sensRepo.chartRepo.chartTimeStamps[iTS];
     const offset = Offset(0, 0);
     canvas.drawLine(offset.translate(x, 0), offset.translate(x, fullH), paintPointerLine);
 
     final List<Offset> controlPoints = <Offset>[];
 
-    for(ListElemIndex iSens = 0; iSens < chartRepo.numSensors; iSens++) {
-      final SplayTreeMap<TimeStamp, SensorValue> sensorData = chartRepo.getChartDataAt(iSens);
+    for(ListElemIndex iSens = 0; iSens < sensRepo.numSensors; iSens++) {
+      final SplayTreeMap<TimeStamp, SensorValue> sensorData = sensRepo.chartRepo.getChartDataAt(iSens);
       final Color chartColor = CHART_COLORS[iSens];
 
       if(sensorData.containsKey(curTS)) {
@@ -91,13 +91,13 @@ class TempSensChartPainter extends CustomPainter {
     const offset = Offset(0, 0);
     double y;
 
-    for(ListElemIndex iSens = 0; iSens < chartRepo.numSensors; iSens++) {
+    for(ListElemIndex iSens = 0; iSens < sensRepo.numSensors; iSens++) {
       final Color chartColor = CHART_COLORS[iSens];
       SensorValue chartMinVal = double.infinity;
       SensorValue chartMaxVal = double.negativeInfinity;
-      final SplayTreeMap<TimeStamp, SensorValue> sensorData = chartRepo.getChartDataAt(iSens);
+      final SplayTreeMap<TimeStamp, SensorValue> sensorData = sensRepo.chartRepo.getChartDataAt(iSens);
       for(ListElemIndex iTS = 0; iTS < numPoints; iTS++) {
-        final curTS = chartRepo.chartTimeStamps[iTS];
+        final curTS = sensRepo.chartRepo.chartTimeStamps[iTS];
         if(sensorData.containsKey(curTS)) {
           final value = sensorData[curTS]!;
           if(chartMinVal > value) { chartMinVal = value; }
@@ -144,11 +144,11 @@ class TempSensChartPainter extends CustomPainter {
 
     // Columns
     for(ListElemIndex iTS = 1; iTS < numPoints-1; iTS++) {
-      final TimeStamp curTS = chartRepo.chartTimeStamps[iTS];
+      final TimeStamp curTS = sensRepo.chartRepo.chartTimeStamps[iTS];
       final dX = stepX * iTS;
       canvas.drawLine(offset.translate(dX, 0), offset.translate(dX, fullH), paintGrid);
 
-      String strTime = chartRepo.timeStampToTime(curTS, iTS%2 == 1);
+      String strTime = sensRepo.timeStampToTime(curTS, iTS%2 == 1);
       final textSpan = TextSpan( text: strTime, style: textStyle,);
 
       final textPainter = TextPainter( textAlign: TextAlign.center, text: textSpan, textDirection: TextDirection.ltr, );
@@ -160,15 +160,15 @@ class TempSensChartPainter extends CustomPainter {
   }
 
   void drawCharts(Canvas canvas, QuantityElements numPoints, double stepX, double offsetY, double scaleY) {
-    for(ListElemIndex iSens = 0; iSens < chartRepo.numSensors; iSens++) {
-      final SplayTreeMap<TimeStamp, SensorValue> sensorData = chartRepo.getChartDataAt(iSens);
+    for(ListElemIndex iSens = 0; iSens < sensRepo.numSensors; iSens++) {
+      final SplayTreeMap<TimeStamp, SensorValue> sensorData = sensRepo.chartRepo.getChartDataAt(iSens);
       final Color chartColor = CHART_COLORS[iSens];
 
       /// This method generates control points, the x = 50*index(+1)
       /// the y is set to random values between half of the screen and bottom of the screen
       final List<Offset> controlPoints = <Offset>[];
       for(ListElemIndex iTS = 0; iTS < numPoints; iTS++) {
-        final curTS = chartRepo.chartTimeStamps[iTS];
+        final curTS = sensRepo.chartRepo.chartTimeStamps[iTS];
 
         if(sensorData.containsKey(curTS)) {
           final value = sensorData[curTS]!;
