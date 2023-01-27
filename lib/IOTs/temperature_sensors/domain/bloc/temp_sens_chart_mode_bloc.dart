@@ -7,17 +7,21 @@ part 'temp_sens_chart_mode_event.dart';
 part 'temp_sens_chart_mode_state.dart';
 
 class TempSensChartModeBloc extends Bloc<TempSensChartModeEvent, TempSensChartModeState> {
-  final TempSensRepository chartRepository;
+  final TempSensRepository sensRepo;
 
-  TempSensChartModeBloc({required this.chartRepository})
-                   : super(TempSensCurrentChartModeState(DEFAULT_CHART_MODE_INDEX)) {
-
+  TempSensChartModeBloc({required this.sensRepo})
+           : super(TempSensCurrentChartModeState(DEFAULT_CHART_MODE_INDEX)) {
     on<TempSensChangeChartModeEvent>((event, emit) async {
-      await Future<void> (() {
-        chartRepository.chartRepo.changeMode(event.iMode);
-      });
-      emit(TempSensCurrentChartModeState(event.iMode));
+        await Future<void> (() async {
+          await sensRepo.chartRepo.changeMode(sensRepo.lastTimeStamp, event.iMode);
+        });
+        emit(TempSensCurrentChartModeState(event.iMode));
     });
+  }
 
+  @override
+  Future<void> close() async {
+    await sensRepo.close();
+    super.close();
   }
 }

@@ -1,5 +1,5 @@
+import 'dart:async';
 import 'dart:math';
-import 'dart:collection';
 import 'package:firebase_database/firebase_database.dart';
 import 'package:flutter/foundation.dart';
 import 'package:iots_manager/IOTs/temperature_sensors/data/api/temp_sens_firebase_api.dart';
@@ -13,6 +13,8 @@ import 'package:iots_manager/IOTs/temperature_sensors/domain/temp_sens_chart_mod
 
 
 class TempSensRepository {
+  bool _updatesStreamActive = true;
+
   final String sIoTId;
 
   late final TempSensFirebaseAPI firebaseAPI = sl<TempSensFirebaseAPI>();
@@ -20,7 +22,7 @@ class TempSensRepository {
 
   final _sensorAddresses = <String>[]; // List of id's of defined sensors
   final _sensorNames = <String, String>{}; // The sensors user's names
-  final _sensFullData = SplayTreeMap<TimeStamp, TempSensOneRecord>();
+  final _sensFullData = <TimeStamp, TempSensOneRecord>{};
 
   TimeStamp _lastTimeStamp = 0; // Last timestamp of received data
 
@@ -28,10 +30,13 @@ class TempSensRepository {
   int updatesCounter = 0;
 
   TempSensRepository(this.sIoTId) {
+
     final dtNowMinus1Day = DateTime.now().subtract(const Duration(days: 1));
     _lastTimeStamp = dtNowMinus1Day.millisecondsSinceEpoch;
     chartRepo = TempSensChartRepository();
   }
+
+  TimeStamp get lastTimeStamp => _lastTimeStamp;
 
   QuantityElements get numSensors => _sensorAddresses.length;
 
@@ -57,16 +62,16 @@ class TempSensRepository {
     _sensorNames.addAll( (snapshot.value as Map<dynamic, dynamic>).cast<String,String>() );
     _sensorAddresses.clear();
     _sensorNames.forEach((address, name) => _sensorAddresses.add(address));
+
+    chartRepo.initSensorsAddresses(_sensorAddresses);
     return true;
   }
 
   Stream<int> initSensorsDataUpdatesStream() {
-    return _sensorsDataUpdatesStream().map((numNewElements) {
+    return _sensorsDataUpdatesStream().map((numNewElements){
       if(numNewElements > 0) {
         lastNumNewRecords = numNewElements;
         updatesCounter++;
-        chartRepo.chartDataPreparing(lastTimeStamp: _lastTimeStamp, sensorAddresses: _sensorAddresses, sensFullData: _sensFullData);
-        //debugPrint("REPO[$sIoTId]: chartMinY= ${chartRepo.chartMinY}; chartMaxY= ${chartRepo.chartMaxY}; chartRangeY= ${chartRepo.chartRangeY}");
         debugPrint("REPO[$sIoTId]: updatesCounter= $updatesCounter; numNewRecords= $lastNumNewRecords");
       }
       return updatesCounter;
@@ -74,11 +79,15 @@ class TempSensRepository {
   }
 
   Stream<QuantityElements> _sensorsDataUpdatesStream() async* {
-    while(true) {
+    while(_updatesStreamActive) {
       DataSnapshot snapshot = await firebaseAPI.getSensorsData(sIoTId, _lastTimeStamp);
       QuantityElements numNewElements = addNewSensorsData(snapshot);
 
       if(numNewElements > 0) {
+        if(!_updatesStreamActive) {
+          return;
+        }
+        await chartRepo.updateChartData(_lastTimeStamp, _sensFullData);
         yield numNewElements;
       }
       await Future.delayed(const Duration(seconds: 30+1));
@@ -143,6 +152,11 @@ class TempSensRepository {
       return "-$twoDigitMinutes:$twoDigitSeconds";
     }
     return "-${twoDigits(duration.inHours)}:$twoDigitMinutes";
+  }
+
+  Future<void> close() async {
+    _updatesStreamActive = false;
+    await chartRepo.close();
   }
 
 }

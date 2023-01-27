@@ -22,16 +22,21 @@ class _TempSensChartWidgetState extends State<TempSensChartWidget> {
   Widget build(BuildContext context) {
     final TempSensRepository sensRepo = RepositoryProvider.of<TempSensRepository>(context);
     if (widget.hasChartData) {
-      return
-          GestureDetector(
-              child: CustomPaint(
-                size: Size.infinite,
-                painter: TempSensChartPainter(sensRepo, iTouchedTimeStamp),
-              ),
-              onPanStart: (details) { if(context.size != null) { setNewIndexTouchedTimeStamp(sensRepo, context.size!.width, details.localPosition.dx.toInt()); } },
-              onPanEnd: (details) { if(iTouchedTimeStamp != null) { setState(() { iTouchedTimeStamp = null; }); } },
-              onPanUpdate: (details) { if(context.size != null) { setNewIndexTouchedTimeStamp(sensRepo, context.size!.width, details.localPosition.dx.toInt()); } }
-          );
+      return GestureDetector(
+          child: CustomPaint(
+            size: Size.infinite,
+            painter: TempSensChartPainter(sensRepo, iTouchedTimeStamp),
+          ),
+          onPanStart: (details) { if(context.size != null) {
+            setNewIndexTouchedTimeStamp(sensRepo, context.size!.width, details.localPosition.dx.toInt()); }
+          },
+          onPanEnd: (details) { if(iTouchedTimeStamp != null) {
+            setState(() { iTouchedTimeStamp = null; }); }
+          },
+          onPanUpdate: (details) { if(context.size != null) {
+            setNewIndexTouchedTimeStamp(sensRepo, context.size!.width, details.localPosition.dx.toInt()); }
+          }
+      );
     } else {
       return const Center(child: CircularProgressIndicator());
     }

@@ -8,9 +8,11 @@ import 'package:iots_manager/IOTs/temperature_sensors/data/repository/temp_sens_
 
 class TempSensChartPainter extends CustomPainter {
   final TempSensRepository sensRepo;
+  final ListElemIndex chartMode;
   final ListElemIndex? iTouchedTimeStamp;
 
-  TempSensChartPainter(this.sensRepo, this.iTouchedTimeStamp);
+  TempSensChartPainter(this.sensRepo, this.iTouchedTimeStamp) : chartMode = sensRepo.chartRepo.chartMode;
+
 
   @override
   void paint(Canvas canvas, Size size) {
@@ -50,7 +52,7 @@ class TempSensChartPainter extends CustomPainter {
     final List<Offset> controlPoints = <Offset>[];
 
     for(ListElemIndex iSens = 0; iSens < sensRepo.numSensors; iSens++) {
-      final SplayTreeMap<TimeStamp, SensorValue> sensorData = sensRepo.chartRepo.getChartDataAt(iSens);
+      final Map<TimeStamp, SensorValue> sensorData = sensRepo.chartRepo.getChartDataAt(iSens);
       final Color chartColor = CHART_COLORS[iSens];
 
       if(sensorData.containsKey(curTS)) {
@@ -95,7 +97,7 @@ class TempSensChartPainter extends CustomPainter {
       final Color chartColor = CHART_COLORS[iSens];
       SensorValue chartMinVal = double.infinity;
       SensorValue chartMaxVal = double.negativeInfinity;
-      final SplayTreeMap<TimeStamp, SensorValue> sensorData = sensRepo.chartRepo.getChartDataAt(iSens);
+      final Map<TimeStamp, SensorValue> sensorData = sensRepo.chartRepo.getChartDataAt(iSens);
       for(ListElemIndex iTS = 0; iTS < numPoints; iTS++) {
         final curTS = sensRepo.chartRepo.chartTimeStamps[iTS];
         if(sensorData.containsKey(curTS)) {
@@ -161,7 +163,7 @@ class TempSensChartPainter extends CustomPainter {
 
   void drawCharts(Canvas canvas, QuantityElements numPoints, double stepX, double offsetY, double scaleY) {
     for(ListElemIndex iSens = 0; iSens < sensRepo.numSensors; iSens++) {
-      final SplayTreeMap<TimeStamp, SensorValue> sensorData = sensRepo.chartRepo.getChartDataAt(iSens);
+      final Map<TimeStamp, SensorValue> sensorData = sensRepo.chartRepo.getChartDataAt(iSens);
       final Color chartColor = CHART_COLORS[iSens];
 
       /// This method generates control points, the x = 50*index(+1)
@@ -209,6 +211,6 @@ class TempSensChartPainter extends CustomPainter {
 
   @override
   bool shouldRepaint(TempSensChartPainter oldDelegate) {
-    return oldDelegate.iTouchedTimeStamp != iTouchedTimeStamp;
+    return oldDelegate.iTouchedTimeStamp != iTouchedTimeStamp || oldDelegate.chartMode != chartMode;
   }
 }

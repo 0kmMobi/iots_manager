@@ -3,8 +3,8 @@ import 'package:iots_manager/common/def_types.dart';
 class TempSensOneRecord {
   final temperatures = <SensorValue>[];
 
-  TempSensOneRecord.empty(List<String> addresses) {
-    for (var i=0; i < addresses.length; i ++) {
+  TempSensOneRecord.empty(QuantityElements numSensors) {
+    for (var i=0; i < numSensors; i ++) {
       temperatures.add(double.nan);
     }
   }

@@ -29,7 +29,7 @@ class IoTBuilder extends StatelessWidget {
         );
       case IOT_DEVICE_TYPE_TEMPERATURE_SENSORS:
         return RepositoryProvider<TempSensRepository>( create: (context) => TempSensRepository(iotInfo.iotId),
-          child: BlocProvider( create: (context) => TempSensChartModeBloc(chartRepository: RepositoryProvider.of<TempSensRepository>(context)),
+          child: BlocProvider( create: (context) => TempSensChartModeBloc(sensRepo: RepositoryProvider.of<TempSensRepository>(context)),
             child: const TempSensWidget(),
           ),
         );

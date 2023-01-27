@@ -129,6 +129,6 @@ class UserBloc extends Bloc<UserEvent, UserState> {
   @override
   void onTransition(Transition<UserEvent, UserState> transition) {
     super.onTransition(transition);
-    debugPrint("--- Bloc.onTransition: $transition");
+    //debugPrint("--- Bloc.onTransition: $transition");
   }
 }

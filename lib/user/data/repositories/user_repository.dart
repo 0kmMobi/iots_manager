@@ -128,12 +128,8 @@ class UserRepository {
 
     final mapDevices = await _dbAPI.queryUserDevicesList(userUId);
 
-//    DataSnapshot snapshot = await _firebaseDB.ref("$basePath/devices/").get();
     /// If user's storage already exists in DB, then get this data
     if(mapDevices != null) {
-      debugPrint("-= If user's storage already exists in DB, then get this data =-");
-      //final mapDevices = (snapshot.value as Map<dynamic, dynamic>).cast<String,String>();
-
       await Future.forEach(mapDevices.entries, (MapEntry entry) async {
         final String sIoTId = entry.key;
         final String sIoTName = entry.value;
@@ -149,7 +145,6 @@ class UserRepository {
         listIoTs.add(info);
         debugPrint(" ===> queryUserDevicesList: listIoTs.add( $info )");
       });
-      debugPrint(" ===> queryUserDevicesList: listIoTs.length= ${listIoTs.length}");
     }
     /// If user's storage not exists in DB, then create empty storage
     else {

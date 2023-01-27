@@ -147,7 +147,12 @@ class _DoorAlertWidgetState extends State<DoorAlertWidget> with SingleTickerProv
               ],
             );
           } else {
-            return const Center(child: CircularProgressIndicator(),);
+            return const SizedBox(
+              height: 60,
+              child: Center(
+                child: CircularProgressIndicator(),
+              ),
+            );
           }
         }
     );

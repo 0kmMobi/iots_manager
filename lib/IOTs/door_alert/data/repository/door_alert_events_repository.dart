@@ -1,5 +1,4 @@
 // ignore_for_file: constant_identifier_names, non_constant_identifier_names
-import 'dart:collection';
 import 'dart:math';
 import 'package:firebase_database/firebase_database.dart';
 import 'package:iots_manager/IOTs/door_alert/data/api/door_alert_firebase_api.dart';
@@ -14,7 +13,7 @@ class DoorAlertEventsRepository{
   final String sIoTId;
 
   late final DoorAlertFirebaseAPI firebaseAPI = sl<DoorAlertFirebaseAPI>();
-  final _eventsFullData = SplayTreeMap<TimeStamp, DoorAlertEvent>();
+  final _eventsFullData = <TimeStamp, DoorAlertEvent>{};
   final _alertSessions = <DoorAlertSession>[];
 
   TimeStamp _lastTimeStamp = 0; // Last timestamp of received data

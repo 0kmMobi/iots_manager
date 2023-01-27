@@ -3,6 +3,7 @@ import 'package:iots_manager/IOTs/temperature_sensors/domain/bloc/temp_sens_char
 import 'package:iots_manager/IOTs/temperature_sensors/presentation/temp_sens_chart_wgt.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:iots_manager/common/def_types.dart';
 import 'package:toggle_switch/toggle_switch.dart';
 import 'package:iots_manager/common/widgets/dlg_edit_text.dart';
 import 'package:iots_manager/IOTs/temperature_sensors/data/temp_sens_constants.dart';
@@ -72,12 +73,13 @@ class _TempSensWidgetState extends State<TempSensWidget> with SingleTickerProvid
           if (snapshot.hasError) {
             return Text("Firebase access failure!\n ${snapshot.error.toString()}");
           } else if (snapshot.hasData) {
-            debugPrint("initSensorsNames: hasData");
             return StreamBuilder<int>(
                 stream: RepositoryProvider.of<TempSensRepository>(context).initSensorsDataUpdatesStream(),
                 builder: (context, snapshot) {
                   final TempSensRepository sensRepo = RepositoryProvider.of<TempSensRepository>(context);
                   final hasChartData = snapshot.hasData;
+                  changeSensorNameCounter.value++;
+
                   return Column(
                     children: [
                       /// The section of a title as the last data date time and option button
@@ -127,7 +129,10 @@ class _TempSensWidgetState extends State<TempSensWidget> with SingleTickerProvid
                                 builder: (context, state) {
                                   return Padding(
                                     padding: const EdgeInsets.fromLTRB(40, 16, 40, 16),
-                                    child: AspectRatio( aspectRatio: 3 / 2, child: TempSensChartWidget(hasChartData: hasChartData),),
+                                    child: AspectRatio(
+                                      aspectRatio: 3 / 2,
+                                      child: TempSensChartWidget(hasChartData: hasChartData),
+                                    ),
                                   );
                                 }),
                             const SizedBox(height: 10,),
@@ -171,21 +176,13 @@ class _TempSensWidgetState extends State<TempSensWidget> with SingleTickerProvid
                                                     style: TextStyle(color: CHART_COLORS[index], fontSize: 25, fontWeight: FontWeight.bold),
                                                   ),
                                                   onTap: () {
-                                                    final String sSensorAddress = sensRepo.sensorAddresses[index];
-                                                    const String sTitle = 'The sensor renaming';
-                                                    final String sMsg = "The sensor addressed as \n$sSensorAddress";
-                                                    displayTextInputDialog(context, sTitle, sMsg, sensRepo.sensorNames[sSensorAddress]! )
-                                                        .then((sNewName) {
-                                                      if(sensRepo.updateSensorName(sSensorAddress, sNewName) ) {
-                                                        changeSensorNameCounter.value++;
-                                                      }
-                                                    });
+                                                    showDialogWhenSensorNameTaped(context, sensRepo, index);
                                                   },
                                                 )
                                             ),
                                             Expanded(flex: 1,
                                                 child: Text(
-                                                  (sensRepo.chartRepo.getSensorLastData(index)).toStringAsFixed(2),
+                                                  (sensRepo.chartRepo.getSensorLastData(sensRepo.lastTimeStamp, index)).toStringAsFixed(2),
                                                   textAlign: TextAlign.center,
                                                   style: TextStyle(color: CHART_COLORS[index], fontSize: 25, fontWeight: FontWeight.bold),)
                                             ),
@@ -217,6 +214,18 @@ class _TempSensWidgetState extends State<TempSensWidget> with SingleTickerProvid
           }
       }
     );
+  }
+
+  void showDialogWhenSensorNameTaped(BuildContext context, TempSensRepository sensRepo, ListElemIndex index) {
+    final String sSensorAddress = sensRepo.sensorAddresses[index];
+    const String sTitle = 'The sensor renaming';
+    final String sMsg = "The sensor addressed as \n$sSensorAddress";
+    displayTextInputDialog(context, sTitle, sMsg, sensRepo.sensorNames[sSensorAddress]! )
+        .then((sNewName) {
+      if(sensRepo.updateSensorName(sSensorAddress, sNewName) ) {
+        changeSensorNameCounter.value++;
+      }
+    });
   }
 }
 

@@ -1,18 +1,16 @@
 
-import 'dart:collection';
 import 'dart:math';
-
-import 'package:iots_manager/IOTs/temperature_sensors/data/repository/temp_sens_one_record.dart';
-import 'package:iots_manager/IOTs/temperature_sensors/data/temp_sens_constants.dart';
-import 'package:iots_manager/IOTs/temperature_sensors/domain/temp_sens_chart_mode.dart';
 import 'package:iots_manager/common/def_types.dart';
+import 'package:iots_manager/IOTs/temperature_sensors/domain/temp_sens_chart_mode.dart';
+import 'package:iots_manager/IOTs/temperature_sensors/data/repository/temp_sens_one_record.dart';
+import 'package:iots_manager/IOTs/temperature_sensors/data/repository/temp_isolate_data_mapper.dart';
+
 
 class TempSensChartRepository {
-  late SplayTreeMap<TimeStamp, TempSensOneRecord> _sensFullData;
-  late TimeStamp _lastTimeStamp; // Last timestamp of received data
+  late final TempIsolateDataMapper isolateDataMapper;
+  late Map<TimeStamp, TempSensOneRecord> _sensFullData;
   late List<String> _sensorAddresses;
   late QuantityElements _numSensors;
-
   late ListElemIndex _curChartMode;
 
   SensorValue chartMinY = 0;
@@ -20,87 +18,75 @@ class TempSensChartRepository {
   SensorValue get chartRangeY => chartMaxY - chartMinY;
 
   final List<TimeStamp> chartTimeStamps = <TimeStamp>[];
-  final List<SplayTreeMap<TimeStamp, SensorValue>> _chartSensorsData = <SplayTreeMap<TimeStamp, SensorValue>>[];
+  final List<Map<TimeStamp, SensorValue>> _chartSensorsData = <Map<TimeStamp, SensorValue>>[];
 
   TempSensChartRepository() {
+    isolateDataMapper = TempIsolateDataMapper();
     _curChartMode = DEFAULT_CHART_MODE_INDEX;
+  }
+
+  void initSensorsAddresses(List<String> sensorAddresses) {
+    _sensorAddresses = sensorAddresses;
+    _numSensors = _sensorAddresses.length;
   }
 
   ListElemIndex get chartMode => _curChartMode;
 
   QuantityElements get chartDataSize => _chartSensorsData.length;
 
-  SplayTreeMap<TimeStamp, SensorValue> getChartDataAt(ListElemIndex index) {
+  Map<TimeStamp, SensorValue> getChartDataAt(ListElemIndex index) {
     return _chartSensorsData[index];
   }
 
-  void changeMode(ListElemIndex mode) {
+  Future<void> changeMode(TimeStamp lastTimeStamp, ListElemIndex mode) async {
     if(_curChartMode != mode) {
       _curChartMode = mode;
-      _chartDataPreparing();
+      await _preparingChartData(_sensFullData, lastTimeStamp, mode);
     }
   }
 
-  SensorValue getSensorLastData(iSens) {
+  SensorValue getSensorLastData(TimeStamp lastTimeStamp, ListElemIndex iSens) {
     if(_chartSensorsData.isEmpty || _chartSensorsData[iSens].isEmpty) {
       return double.nan;
     }
-    return _chartSensorsData[iSens][_lastTimeStamp] ?? double.nan;
+    return _chartSensorsData[iSens][lastTimeStamp] ?? double.nan;
   }
 
-  void chartDataPreparing({required TimeStamp lastTimeStamp, required List<String> sensorAddresses, required SplayTreeMap<TimeStamp, TempSensOneRecord> sensFullData}) {
-    _lastTimeStamp = lastTimeStamp;
-    _sensorAddresses = sensorAddresses;
-    _numSensors = _sensorAddresses.length;
+  Future<void> updateChartData(TimeStamp lastTimeStamp,
+                        Map<TimeStamp,TempSensOneRecord> sensFullData) async {
     _sensFullData = sensFullData;
-
-    _chartDataPreparing();
+    await _preparingChartData(_sensFullData, lastTimeStamp, _curChartMode);
   }
 
-  void _chartDataPreparing() {
-    /// Prepare the chart for defined time range (5 min, 30 min, 3 hours, 12 hours, 24 hours)
-    /// For build the chart need N points (it's about 10-20)
-    ///  ... but number of real record much more.
-    ///  So need to compress data
-    final sensDataTrimmed = _trimSensorsDataToTimeRange();
+  Future<void> _preparingChartData(
+      Map<TimeStamp, TempSensOneRecord> sensFullData,
+      TimeStamp lastTimeStamp, ListElemIndex curChartMode) async {
 
-    /// 2. Since for the chart need to use less than N points (about 10-20),
-    ///    and the last record is much actual for the user, then the last record need to use as single chart point,
-    ///    and all a previous records need split to N-1 groups
-    ///    After that, from each group it is necessary to create only one point of the chart, averaging values of all records.
-    final lastRecord = sensDataTrimmed[_lastTimeStamp] as TempSensOneRecord;
-    sensDataTrimmed.remove(_lastTimeStamp);
+int t1 = DateTime.now().millisecondsSinceEpoch;
 
-    final TimeStamp firstTS = sensDataTrimmed.firstKey() ?? 0;
-    final stepTS = (_lastTimeStamp-firstTS) / (CHART_NUM_POINTS-1.0);
-    final sensDataResult = SplayTreeMap<TimeStamp, TempSensOneRecord>();
+    await isolateDataMapper.startTask(
+        IsolateDataMapperTask(_numSensors, sensFullData, lastTimeStamp, curChartMode)
+    ).then((sensDataSet) {
+      _mapDataSetToChartData(sensDataSet);
+      _initChartParameters(sensDataSet);
+    });
 
-    for(ListElemIndex iTime = 0; iTime < (CHART_NUM_POINTS-1.0); iTime ++) {
-      final TimeStamp startTS = (firstTS + stepTS * iTime).toInt();
-      final mapTSRange = SplayTreeMap<TimeStamp, TempSensOneRecord>.fromIterable(
-          sensDataTrimmed.keys.where((ts) => ts >= startTS && ts < startTS+stepTS),
-          key: (ts) => ts,
-          value: (ts) => sensDataTrimmed[ts]!
-      );
+int t2 = DateTime.now().millisecondsSinceEpoch;
 
-      final TempSensOneRecord averageRecord = _rangeRecordsToAverageSingleRecord(mapTSRange);
-      sensDataResult.putIfAbsent( (startTS+stepTS/2).toInt(), () => averageRecord);
-    }
-    /// In the end to add the last record data as independent point, since its are a most actual data
-    sensDataResult.putIfAbsent(_lastTimeStamp, () => lastRecord);
+print("******************* _preparingChartData: ${t2-t1}");
 
-    _initChartData(sensDataResult);
-    _initChartParameters(sensDataResult);
   }
 
-  void _initChartData(SplayTreeMap<TimeStamp, TempSensOneRecord> sensDataResult) {
+
+  /// Initialize data for the chart
+  void _mapDataSetToChartData(Map<TimeStamp, TempSensOneRecord> sensDataSections) {
     _chartSensorsData.clear();
     for(ListElemIndex iSens = 0; iSens < _numSensors; iSens++) {
-      _chartSensorsData.add( SplayTreeMap<TimeStamp, SensorValue>() );
+      _chartSensorsData.add( <TimeStamp, SensorValue>{} );
     }
 
     chartTimeStamps.clear();
-    sensDataResult.forEach((ts, sensorsRecord) {
+    sensDataSections.forEach((ts, sensorsRecord) {
       for(ListElemIndex iSens = 0; iSens < _numSensors; iSens++) {
         if(!sensorsRecord.temperatures[iSens].isNaN) {
           _chartSensorsData[iSens].putIfAbsent(ts, () => sensorsRecord.temperatures[iSens]);
@@ -111,7 +97,7 @@ class TempSensChartRepository {
   }
 
   /// Determine the Max and min values
-  void _initChartParameters(SplayTreeMap<TimeStamp, TempSensOneRecord> sensDataResult) {
+  void _initChartParameters(Map<TimeStamp, TempSensOneRecord> sensDataResult) {
     SensorValue chartMinValue = double.maxFinite;
     SensorValue chartMaxValue = -double.maxFinite;
 
@@ -131,47 +117,12 @@ class TempSensChartRepository {
     chartMaxY = chartMaxValue + rangeY*0.1;
   }
 
-  /// Calculate the average values for all elements of mapTSRange (for each sensor separately)
-  TempSensOneRecord _rangeRecordsToAverageSingleRecord(SplayTreeMap<TimeStamp, TempSensOneRecord> mapTSRange) {
-    final sensorsRecordAverage = TempSensOneRecord.empty(_sensorAddresses);
-    final List<int> sensorsAverDivisors = List.filled(_numSensors, 0);
 
-    ///  In first, to sum all values
-    mapTSRange.forEach((recTS, oneRecord) {
-      for(ListElemIndex iSens = 0; iSens < _numSensors; iSens++) {
-        final fTemper = oneRecord.temperatures[iSens];
-        if(!fTemper.isNaN) {
-          sensorsAverDivisors[iSens] += 1;
-          if (sensorsRecordAverage.temperatures[iSens].isNaN) {
-            sensorsRecordAverage.temperatures[iSens] = fTemper;
-          } else {
-            sensorsRecordAverage.temperatures[iSens] += fTemper;
-          }
-        }
-      }
-    });
-    /// ... and after that, to divide by number of their
-    for(ListElemIndex iSens = 0; iSens < _numSensors; iSens++) {
-      sensorsRecordAverage.temperatures[iSens] /= sensorsAverDivisors[iSens];
-    }
-    return sensorsRecordAverage;
-  }
 
-  /// Copy data which that has trimmed to specific time range
-  SplayTreeMap<TimeStamp, TempSensOneRecord> _trimSensorsDataToTimeRange() {
-    final thresholdTS = _lastTimeStamp - CHART_MODES[chartMode].duration;
-    return _getCopyAllDataAfter(thresholdTS);
-  }
 
-  SplayTreeMap<TimeStamp, TempSensOneRecord> _getCopyAllDataAfter(TimeStamp thresholdTS) {
-    final sensFullDataCopy = SplayTreeMap<TimeStamp, TempSensOneRecord>();
 
-    _sensFullData.forEach((TimeStamp timestamp, TempSensOneRecord record) {
-      if(timestamp > thresholdTS) {
-        sensFullDataCopy[timestamp] = record;
-      }
-    });
-    return sensFullDataCopy;
+  Future<void> close() async {
+    await isolateDataMapper.stop();
   }
 
 

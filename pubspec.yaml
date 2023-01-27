@@ -12,6 +12,8 @@ dependencies:
   flutter:
     sdk: flutter
 
+  async: ^2.10.0
+
   get_it: ^7.2.0
   flutter_bloc: ^8.0.1
 
@@ -19,7 +21,7 @@ dependencies:
   either_dart: ^0.3.0
 
   firebase_core: ^2.4.0
-  firebase_auth: ^4.2.0
+  firebase_auth: ^4.2.2
   email_validator: ^2.1.17
 
   firebase_database: ^10.0.5
@@ -28,12 +30,14 @@ dependencies:
   firebase_messaging: ^14.2.1
   http: ^0.13.5
 
-  intl: ^0.17.0
+  intl: ^0.18.0
   toggle_switch: ^2.0.1
   mobile_scanner: ^2.1.0
   flutter_beep: ^1.0.0
 
   cupertino_icons: ^1.0.2
+
+
 
 
 dev_dependencies:
