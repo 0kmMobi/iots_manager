@@ -1,6 +1,6 @@
 # iots_manager
 
-The mobile cross-platform application for manage the IoT devices of smart home system.
+The mobile cross-platform application for manage the IoT devices of the smart home system.
 
 ## 'Smart Home' system scheme
 
